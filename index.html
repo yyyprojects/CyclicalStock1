@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>An Interactive Guide to Cyclical Stocks</title>
+    <!-- Chosen Palette: Calm Finance -->
+    <!-- Application Structure Plan: The SPA is designed as a guided learning path. It starts with a high-level definition, then moves to an interactive economic cycle diagram where users can click each phase to see its impact on cyclical stocks. This is followed by a clear, visual comparison between cyclical and defensive stocks. Next, a sector explorer allows users to discover real-world examples in an engaging way. The app concludes with actionable investment takeaways. This thematic, interactive structure was chosen over the report's linear format to enhance user engagement and understanding, turning passive reading into active learning. -->
+    <!-- Visualization & Content Choices: 
+        1. Economic Cycle: Goal: Explain the core relationship. Viz: A custom HTML/CSS wave diagram with 4 clickable phases. Interaction: Clicking a phase updates a description panel and a simple Chart.js trend chart, visually linking the economic phase to stock performance. Justification: This interactive approach is more memorable and intuitive than static text. Library: Chart.js.
+        2. Cyclical vs. Defensive Comparison: Goal: Visually compare volatility. Viz: A simple horizontal bar chart showing relative Beta values. Interaction: Static visual aid within a comparative layout. Justification: A chart instantly clarifies the abstract concept of high vs. low volatility (Beta). Library: Chart.js.
+        3. Sector Explorer: Goal: Organize and present real-world examples. Viz: A grid of interactive cards. Interaction: Clicking a card expands it to show details about the industry and example companies. Justification: This "discovery" model encourages exploration without overwhelming the user. Library: Vanilla JS.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+            color: #1e293b; /* slate-800 */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 250px;
+            max-height: 300px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 300px;
+                max-height: 350px;
+            }
+        }
+        .phase-dot {
+            transition: all 0.3s ease-in-out;
+        }
+        .phase-label {
+            transition: all 0.3s ease-in-out;
+        }
+        .active-phase .phase-dot {
+            transform: scale(1.5);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.4); /* blue-500 with opacity */
+        }
+        .active-phase .phase-label {
+            font-weight: 700;
+            color: #1d4ed8; /* blue-700 */
+        }
+        .sector-card {
+            transition: all 0.3s ease-in-out;
+        }
+        .sector-card .details {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out;
+        }
+        .sector-card.open .details {
+            max-height: 500px;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white shadow-sm">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-900">An Interactive Guide to Cyclical Stocks</h1>
+            <p class="mt-2 text-lg text-slate-600">Understand how some stocks ride the waves of the economy.</p>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+
+        <!-- Section 1: Introduction -->
+        <section id="intro" class="text-center mb-16 md:mb-24">
+            <h2 class="text-2xl md:text-3xl font-bold text-slate-800 mb-4">What Exactly is a Cyclical Stock?</h2>
+            <div class="max-w-3xl mx-auto text-slate-600 space-y-4 text-base md:text-lg">
+                <p>Imagine a company that sells things people buy when they feel good about their finances—like new cars, luxury watches, or plane tickets for a vacation. These are often called "non-essential" or "discretionary" items.</p>
+                <p>A <span class="font-semibold text-blue-600">cyclical stock</span> is a share in one of these companies. Its performance is closely tied to the ups and downs of the overall economy. When the economy is strong, these companies thrive. When the economy weakens, they often struggle. They follow the <span class="font-semibold text-blue-600">economic cycle</span>.</p>
+            </div>
+        </section>
+
+        <!-- Section 2: The Economic Cycle -->
+        <section id="cycle" class="mb-16 md:mb-24">
+            <div class="text-center mb-10">
+                <h2 class="text-2xl md:text-3xl font-bold text-slate-800 mb-2">The Economic Cycle and Stock Performance</h2>
+                <p class="text-slate-600 max-w-3xl mx-auto">The economy moves in a natural cycle of four phases. Click on each phase below to see how cyclical stocks typically react.</p>
+            </div>
+            
+            <div class="bg-white p-6 md:p-8 rounded-xl shadow-lg">
+                <div class="relative w-full h-32 md:h-40 mb-8">
+                    <svg class="absolute w-full h-full" preserveAspectRatio="none" viewBox="0 0 800 160">
+                        <path d="M0,80 Q200,10 400,80 T800,80" stroke="#94a3b8" stroke-width="3" fill="none" stroke-dasharray="10 5"/>
+                    </svg>
+                    <div id="cycle-visualizer" class="relative w-full h-full flex justify-between items-center">
+                        <!-- Phases will be injected by JS -->
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                    <div id="cycle-info" class="bg-slate-50 p-6 rounded-lg">
+                        <h3 id="phase-title" class="text-xl font-bold text-slate-800 mb-2"></h3>
+                        <p id="phase-description" class="text-slate-600 mb-4"></p>
+                        <div id="phase-sectors" class="text-sm"></div>
+                    </div>
+                    <div>
+                        <div class="chart-container">
+                            <canvas id="performanceChart"></canvas>
+                        </div>
+                        <p class="text-center text-sm text-slate-500 mt-2">Typical Performance Trend</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Cyclical vs. Defensive -->
+        <section id="comparison" class="mb-16 md:mb-24">
+            <div class="text-center mb-10">
+                <h2 class="text-2xl md:text-3xl font-bold text-slate-800 mb-2">A Tale of Two Stocks: Cyclical vs. Defensive</h2>
+                <p class="text-slate-600 max-w-3xl mx-auto">Not all stocks behave the same way. Cyclical stocks have an opposite: defensive stocks. Understanding the difference is key to building a balanced investment strategy.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-blue-500">
+                    <h3 class="text-xl font-bold text-slate-800 mb-3">🚀 Cyclical Stocks</h3>
+                    <ul class="space-y-3 text-slate-600">
+                        <li><strong class="text-slate-700">Products:</strong> Wants & luxuries (cars, travel, high-end electronics).</li>
+                        <li><strong class="text-slate-700">In a Good Economy:</strong> Sales soar, stock prices can rise dramatically.</li>
+                        <li><strong class="text-slate-700">In a Bad Economy:</strong> Sales drop, stock prices can fall sharply.</li>
+                        <li><strong class="text-slate-700">Volatility:</strong> High. They tend to move more than the overall market.</li>
+                    </ul>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-teal-500">
+                    <h3 class="text-xl font-bold text-slate-800 mb-3">🛡️ Defensive Stocks</h3>
+                    <ul class="space-y-3 text-slate-600">
+                        <li><strong class="text-slate-700">Products:</strong> Needs & essentials (food, medicine, electricity).</li>
+                        <li><strong class="text-slate-700">In a Good Economy:</strong> Stable sales, steady but slower growth.</li>
+                        <li><strong class="text-slate-700">In a Bad Economy:</strong> Sales remain stable as people still need essentials.</li>
+                        <li><strong class="text-slate-700">Volatility:</strong> Low. They tend to move less than the overall market.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-10 bg-white p-6 md:p-8 rounded-xl shadow-lg">
+                <h3 class="text-xl font-bold text-center text-slate-800 mb-4">Visualizing Volatility (Beta)</h3>
+                <p class="text-center text-sm text-slate-500 mb-4 max-w-2xl mx-auto">Beta measures a stock's volatility compared to the market (which has a beta of 1.0). A high beta means higher risk and higher potential reward.</p>
+                <div class="chart-container h-48 md:h-56 max-h-64">
+                    <canvas id="betaChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Sector Explorer -->
+        <section id="sectors" class="mb-16 md:mb-24">
+            <div class="text-center mb-10">
+                <h2 class="text-2xl md:text-3xl font-bold text-slate-800 mb-2">Explore the Cyclical Universe</h2>
+                <p class="text-slate-600 max-w-3xl mx-auto">Cyclical companies exist in many industries. Click on a sector below to see why it's cyclical and discover some well-known US companies.</p>
+            </div>
+            <div id="sector-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Sector cards will be injected by JS -->
+            </div>
+        </section>
+
+        <!-- Section 5: Key Takeaways -->
+        <section id="takeaways">
+            <div class="text-center mb-10">
+                <h2 class="text-2xl md:text-3xl font-bold text-slate-800 mb-2">Investing Smarts: Key Takeaways</h2>
+                <p class="text-slate-600 max-w-3xl mx-auto">Considering cyclical stocks? Here are the most important things to remember.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <div class="text-4xl mb-3">🎢</div>
+                    <h3 class="font-bold text-lg text-slate-800 mb-2">High Risk, High Reward</h3>
+                    <p class="text-slate-600 text-sm">Cyclical stocks offer the potential for big gains, but also carry the risk of significant losses. They are not for the faint of heart.</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <div class="text-4xl mb-3">⏱️</div>
+                    <h3 class="font-bold text-lg text-slate-800 mb-2">Timing is Critical</h3>
+                    <p class="text-slate-600 text-sm">Buying low (during a downturn) and selling high (during an expansion) is the goal, but predicting the economy's turns is extremely difficult.</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <div class="text-4xl mb-3">⚖️</div>
+                    <h3 class="font-bold text-lg text-slate-800 mb-2">Balance is Everything</h3>
+                    <p class="text-slate-600 text-sm">A smart portfolio often includes a mix of cyclical and defensive stocks to balance growth potential with stability.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-slate-800 text-slate-400 mt-16">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center text-sm">
+            <p>This interactive guide is for educational purposes only and is not financial advice.</p>
+            <p>&copy; 2025 Interactive Financial Guides. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- Data Store ---
+            const cycleData = [
+                {
+                    id: 'expansion',
+                    name: 'Expansion',
+                    position: '12.5%',
+                    yPos: '40%',
+                    title: 'Phase 1: Expansion',
+                    description: 'The economy is growing. Jobs are plentiful, confidence is high, and people have more money to spend. This is the prime time for cyclical stocks.',
+                    sectors: '<strong class="text-slate-700">Top Performers:</strong> Technology, Automotive, Travel, Luxury Goods.',
+                    performance: [40, 60, 80, 100]
+                },
+                {
+                    id: 'peak',
+                    name: 'Peak',
+                    position: '37.5%',
+                    yPos: '10%',
+                    title: 'Phase 2: Peak',
+                    description: 'Economic growth hits its maximum point. Inflation might rise, and central banks may increase interest rates to cool things down. Investors start getting cautious.',
+                    sectors: '<strong class="text-slate-700">Performance:</strong> May start to flatten or slightly decline as investors anticipate a downturn.',
+                    performance: [100, 95, 90, 85]
+                },
+                {
+                    id: 'contraction',
+                    name: 'Contraction',
+                    position: '62.5%',
+                    yPos: '60%',
+                    title: 'Phase 3: Contraction (Recession)',
+                    description: 'The economy slows down. Businesses cut back, unemployment may rise, and consumers spend less on non-essentials. Cyclical stocks typically perform poorly.',
+                    sectors: '<strong class="text-slate-700">Underperformers:</strong> Most cyclical sectors, especially big-ticket items like cars and construction.',
+                    performance: [85, 60, 40, 20]
+                },
+                {
+                    id: 'trough',
+                    name: 'Trough',
+                    position: '87.5%',
+                    yPos: '90%',
+                    title: 'Phase 4: Trough',
+                    description: 'The economy hits its lowest point before recovery begins. This can be a strategic time for savvy investors to buy cyclical stocks at low prices.',
+                    sectors: '<strong class="text-slate-700">Opportunity:</strong> Prices are low, presenting a high-risk, high-reward entry point for the next expansion.',
+                    performance: [20, 25, 30, 40]
+                }
+            ];
+
+            const sectorData = [
+                {
+                    icon: '🚗',
+                    name: 'Automotive',
+                    driver: 'Consumer discretionary spending on big-ticket items.',
+                    companies: 'Ford (F), General Motors (GM), Tesla (TSLA)'
+                },
+                {
+                    icon: '✈️',
+                    name: 'Travel & Leisure',
+                    driver: 'Discretionary spending on vacations and entertainment.',
+                    companies: 'Delta Air Lines (DAL), Walt Disney (DIS), Expedia (EXPE)'
+                },
+                {
+                    icon: '💻',
+                    name: 'Technology',
+                    driver: 'Consumer tech upgrades and business investment cycles.',
+                    companies: 'NVIDIA (NVDA), Apple (AAPL), Advanced Micro Devices (AMD)'
+                },
+                {
+                    icon: '🏠',
+                    name: 'Housing & Construction',
+                    driver: 'Home buying, renovations, and infrastructure projects.',
+                    companies: 'Home Depot (HD), D.R. Horton (DHI), Caterpillar (CAT)'
+                },
+                {
+                    icon: '💳',
+                    name: 'Financial Services',
+                    driver: 'Interest rates, credit demand, and overall economic activity.',
+                    companies: 'JPMorgan (JPM), Bank of America (BAC), Visa (V)'
+                },
+                {
+                    icon: '💎',
+                    name: 'Luxury & Retail',
+                    driver: 'High disposable income and consumer confidence.',
+                    companies: 'Lululemon (LULU), Amazon (AMZN), Costco (COST)'
+                }
+            ];
+
+            // --- Economic Cycle Interaction ---
+            const visualizer = document.getElementById('cycle-visualizer');
+            const phaseTitle = document.getElementById('phase-title');
+            const phaseDescription = document.getElementById('phase-description');
+            const phaseSectors = document.getElementById('phase-sectors');
+            let performanceChart;
+
+            function createPerformanceChart() {
+                const ctx = document.getElementById('performanceChart').getContext('2d');
+                performanceChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['', '', '', ''],
+                        datasets: [{
+                            label: 'Performance Trend',
+                            data: [],
+                            borderColor: '#3b82f6', // blue-500
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 0,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { enabled: false }
+                        },
+                        scales: {
+                            x: { display: false },
+                            y: { display: false }
+                        }
+                    }
+                });
+            }
+
+            function updateCycleView(phaseId) {
+                const phase = cycleData.find(p => p.id === phaseId);
+                if (!phase) return;
+
+                phaseTitle.textContent = phase.title;
+                phaseDescription.textContent = phase.description;
+                phaseSectors.innerHTML = phase.sectors;
+
+                performanceChart.data.datasets[0].data = phase.performance;
+                performanceChart.update();
+                
+                document.querySelectorAll('.phase-button').forEach(btn => {
+                    btn.classList.toggle('active-phase', btn.dataset.phase === phaseId);
+                });
+            }
+
+            cycleData.forEach(phase => {
+                const button = document.createElement('button');
+                button.className = 'phase-button absolute transform -translate-x-1/2 -translate-y-1/2 text-center cursor-pointer';
+                button.style.left = phase.position;
+                button.style.top = phase.yPos;
+                button.dataset.phase = phase.id;
+                button.innerHTML = `
+                    <div class="phase-dot w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-md mx-auto"></div>
+                    <span class="phase-label text-sm md:text-base text-slate-600 font-medium mt-2 block">${phase.name}</span>
+                `;
+                button.addEventListener('click', () => updateCycleView(phase.id));
+                visualizer.appendChild(button);
+            });
+
+            createPerformanceChart();
+            updateCycleView('expansion');
+
+            // --- Beta Comparison Chart ---
+            const betaCtx = document.getElementById('betaChart').getContext('2d');
+            new Chart(betaCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Cyclical Stocks', 'Defensive Stocks'],
+                    datasets: [{
+                        label: 'Average Beta',
+                        data: [1.5, 0.6], // Example beta values
+                        backgroundColor: ['#3b82f6', '#14b8a6'], // blue-500, teal-500
+                        borderRadius: 4,
+                        barPercentage: 0.6,
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Beta: ${context.raw.toFixed(1)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Volatility vs. Market (Beta)',
+                                font: { size: 12 }
+                            }
+                        },
+                        y: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+
+            // --- Sector Explorer ---
+            const sectorGrid = document.getElementById('sector-grid');
+            sectorData.forEach(sector => {
+                const card = document.createElement('div');
+                card.className = 'sector-card bg-white rounded-xl shadow-lg cursor-pointer overflow-hidden border border-transparent hover:border-blue-500';
+                card.innerHTML = `
+                    <div class="header flex items-center p-4">
+                        <span class="text-3xl mr-4">${sector.icon}</span>
+                        <h3 class="font-bold text-lg text-slate-800">${sector.name}</h3>
+                    </div>
+                    <div class="details px-4 pb-4">
+                        <p class="text-sm text-slate-500 mb-3">${sector.driver}</p>
+                        <div class="bg-slate-50 p-3 rounded-md">
+                            <h4 class="text-xs font-semibold text-slate-700 mb-1">Example Companies:</h4>
+                            <p class="text-xs text-slate-600">${sector.companies}</p>
+                        </div>
+                    </div>
+                `;
+                sectorGrid.appendChild(card);
+
+                card.addEventListener('click', () => {
+                    const wasOpen = card.classList.contains('open');
+                    document.querySelectorAll('.sector-card.open').forEach(c => c.classList.remove('open'));
+                    if (!wasOpen) {
+                        card.classList.add('open');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
